@@ -1,0 +1,12 @@
+order_id,line_id,order_date,customer_id,customer_name,product_id,product_name,quantity,unit_price,order_status,source_updated_at
+SO1001,1,2026-09-01,C001,Alex Taylor,P001,Desk Lamp,2,49.90,Completed,2026-09-01T10:00:00
+SO1001,2,2026-09-01,C001,Alex Taylor,P002,Notebook Set,1,18.50,Completed,2026-09-01T10:00:00
+SO1002,1,2026-09-01,C002,Sam Lee,P003,Water Bottle,3,24.00,Completed,2026-09-01T11:30:00
+SO1003,1,2026-09-02,C003,Jamie Ng,P001,Desk Lamp,1,49.90,Cancelled,2026-09-02T09:00:00
+SO1004,1,2026-09-02,C004,Morgan Chen,P002,Notebook Set,2,18.50,Completed,2026-09-02T10:00:00
+SO1004,1,2026-09-02,C004,Morgan Chen,P002,Notebook Set,4,18.50,Completed,2026-09-02T11:00:00
+SO1005,1,2026-09-02,C002,Sam Lee,P003,Water Bottle,1,24.00,Returned,2026-09-02T12:30:00
+SO1006,1,2026-09-03,C003,Jamie Ng,P001,Desk Lamp,2,49.90,Completed,2026-09-03T10:30:00
+SO1007,1,2026-09-03,C001,Alex Taylor,P003,Water Bottle,2,24.00,Completed,2026-09-03T12:00:00
+SO1008,1,2026-09-04,C004,Morgan Chen,P002,Notebook Set,5,18.50,Completed,2026-09-04T13:00:00
+SO1008,2,2026-09-04,C004,Morgan Chen,P001,Desk Lamp,1,49.90,Completed,2026-09-04T13:00:00
