@@ -1,6 +1,6 @@
 # Olist migration — detailed portfolio milestone plan
 
-> **Planning document · Updated 2026-10-25.** M0 records the verified synthetic-data baseline. **M1–M9 are plans, not completed features.** Keep this document in sync with actual commits and test evidence; never infer completion from a written task or proposed file path.
+> **Milestone status updated 2026-10-26.** M0 (synthetic baseline) and M1 (Olist acquisition/profiling) are completed and evidenced. **M2–M9 remain plans, not completed features.** Keep this document in sync with actual commits and test evidence; never infer completion from a written task or proposed file path.
 
 ## Goals, scope and delivery strategy
 
@@ -16,7 +16,7 @@
 | Milestone | Outcome | Status | Indicative timing | Depends on |
 | --- | --- | --- | --- | --- |
 | M0 | Verified local synthetic pipeline preserved | **Completed (baseline)** | 2026-10-25 | — |
-| M1 | Olist acquisition, profiling and data dictionary | Planned | Week 1 | M0 |
+| M1 | Olist acquisition, profiling and data dictionary | **Completed (local verification + PR #1 merged)** | 2026-10-25–26 | M0 |
 | M2 | Validated Python ingestion into Bronze | Planned | Week 2 | M1 |
 | M3 | dbt Silver source transformations | Planned | Week 3 | M2 |
 | M4 | Gold dimensional warehouse and reconciled KPIs | Planned | Weeks 4–5 | M3 |
@@ -57,7 +57,7 @@ Do **not** join order items directly to payments, reviews or raw geolocation and
 
 ## M1 — Olist acquisition and exploratory data profiling
 
-**Status:** Planned · **Estimate:** Week 1 · **Depends on:** M0
+**Status:** **Completed (2026-10-25–26)** · **Depends on:** M0
 
 **Objective:** Establish source semantics and profiling evidence *before* modelling.
 
@@ -72,7 +72,9 @@ Do **not** join order items directly to payments, reviews or raw geolocation and
 
 **Acceptance criteria:** Every CSV is profiled, key/relationship assumptions are documented, and a reviewer can reproduce reported source counts from the same files.
 
-**Suggested commit:** `feat(data): profile Olist sources and document data dictionary`
+**Evidence and closeout:** [Merged PR #1](https://github.com/CandyCheng-git/end-to-end-sales-analytics-pipeline/pull/1) contains `scripts/profile_olist.py`, source [data dictionary](olist_data_dictionary.md), [profiling report](olist_profiling.md), [executed command record](olist-m1-execution-notes.md), and Git/Docker exclusions for raw CSVs. The supplied local logs verify all nine headers against the dictionary (52 fields), nine CSVs successfully profiled, distinct-key/foreign-key checks, product category and review-grain investigations. After the merge, the local synthetic Docker Compose pipeline loaded 11 rows, built 5 dbt models, passed 17 dbt data tests (`PASS=22 WARN=0 ERROR=0`), and exported `daily_sales.csv`. GitHub Actions passed Python unit tests, but did not independently run the raw Olist profiling or full Docker/dbt pipeline. The original Olist CSVs and generated reports are kept local.
+
+**Remaining future work belongs to M2/M3:** ingestion into DuckDB Bronze, automated Olist schema and grain tests, typed models and formal geolocation deduplication. Verify licence terms before redistributing any source or derivative data.
 
 ## M2 — Python ingestion and Bronze tables
 
@@ -224,12 +226,12 @@ Do **not** join order items directly to payments, reviews or raw geolocation and
 
 ---
 
-## Immediate next actions (start M1)
+## Immediate next actions (start M2)
 
-1. Preserve the verified synthetic baseline; inspect `git status` and choose a clean migration feature branch.
-2. Download the nine Olist CSVs into a local ignored `data/raw/olist/` directory, verify dataset terms and record source attribution.
-3. Implement profiling **before** ingesting into Bronze; inspect grain, duplicate keys, dates, nulls, orphan joins and row counts.
-4. Commit the profiling script, data dictionary and reproducible instructions **without** uploading Olist raw data or credentials.
+1. Keep M1 raw-data exclusions and profiling records intact; update the local `main` after this documentation closeout is merged.
+2. Implement `scripts/ingest_olist.py` on a dedicated development branch, with strict input schema validation, file provenance and row-count reconciliation.
+3. Create 9 DuckDB Bronze source tables with deterministic reruns; keep the original synthetic pipeline independently runnable.
+4. Add Olist-specific ingestion tests and document observed row counts and failure modes; do not commit Olist raw data or credentials.
 5. Begin M2 only when the M1 acceptance criteria above are met.
 
 ## Maintenance and evidence rules
