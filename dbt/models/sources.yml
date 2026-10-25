@@ -1,0 +1,8 @@
+version: 2
+sources:
+  - name: bronze
+    database: sales
+    schema: bronze
+    tables:
+      - name: raw_sales
+        description: Validated synthetic source rows loaded by the Python ingestion script.
