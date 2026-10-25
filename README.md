@@ -8,6 +8,27 @@ Sales data often arrives as raw transaction records with repeated updates, mixed
 
 The provided dataset is **synthetic demonstration data**, not client or employer information.
 
+## Development roadmap — Olist migration
+
+The existing 11-row synthetic pipeline is a **verified local baseline**, not the final dataset. The next goal is to add the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) without removing the regression-test baseline. Olist, Power BI, Databricks and the extensions below are **not yet implemented**.
+
+| Milestone | Scope | Status | Indicative timing |
+| --- | --- | --- | --- |
+| M0 | Preserve the verified synthetic local pipeline | **Completed** (baseline) | 2026-10-25 |
+| M1 | Acquire and profile Olist's nine source CSVs | Planned | Week 1 |
+| M2 | Build Python ingestion and DuckDB Bronze tables | Planned | Week 2 |
+| M3 | Implement dbt Silver staging and cleaning | Planned | Week 3 |
+| M4 | Build Gold dimensional models and business metrics | Planned | Weeks 4–5 |
+| M5 | Add data quality, reconciliation and end-to-end CI | Planned | Week 6 |
+| M6 | Deliver Power BI dashboard and portfolio v1.0 | Planned | Weeks 7–8 |
+| M7 | Integrate Olist marketing funnel data | Optional | Week 9 |
+| M8 | Migrate and reconcile models in Databricks / Delta Lake | Planned extension | Weeks 10–11+ |
+| M9 | Incremental processing and scalability benchmarks | Optional | Week 12+ |
+
+*Timelines are estimates based on roughly 8–12 hours per week, not delivery commitments. M0–M6 define the first complete local Olist portfolio release; advanced extensions can be reprioritised.*
+
+**[Read the complete M0–M9 milestone plan →](docs/portfolio-next-steps.md)** for tasks, deliverables, dependencies, acceptance criteria, and suggested commits.
+
 ## Architecture
 
 ```mermaid
@@ -120,19 +141,16 @@ These four rows were checked against the exported CSV after the successful local
 
 dbt models declare `not_null`, `unique`, `accepted_values` and `relationships` tests. Python ingestion rejects missing fields, invalid dates, invalid quantities/prices and unknown statuses before writing the Bronze table. **All 17 dbt data tests and all 11 Python unit tests passed locally** on 2026-10-25. The GitHub Actions workflow currently executes **Python unit tests only**; it does **not** run the complete ingestion → dbt → export integration pipeline.
 
-## Limitations / planned extensions
+## Current limitations
 
-- [x] Python CSV ingestion into local DuckDB
-- [x] SQL-based staging and dimensional models in dbt
-- [x] Declarative dbt data-quality tests and unit-tested input validation
-- [x] Daily-sales CSV export for a BI tool
-- [x] Locally verified Docker Compose run (5 models, 17 dbt tests, 11 Python unit tests)
-- [ ] Run and document a working Databricks implementation
-- [ ] Build a real Power BI dashboard and add screenshots / report files
-- [ ] Add automated end-to-end integration tests and pipeline scheduling
-- [ ] Add incremental ingestion, late-arriving records and SCD Type 2
+The verified execution and metrics above relate **only to the synthetic local dataset**. The Olist migration has not started in this repository.
 
-See [`docs/portfolio-next-steps.md`](docs/portfolio-next-steps.md) for the development roadmap.
+- No Olist ingestion, Silver/Gold Olist models or Olist business metrics have been verified yet.
+- The Power BI report and Databricks integration are not yet implemented.
+- GitHub Actions currently runs Python unit tests only; full-pipeline CI, scheduling, incremental loads and production monitoring remain future work.
+- The sample model is a local proof of concept, not a production deployment.
+
+See the [complete development roadmap](docs/portfolio-next-steps.md) for planned milestones and acceptance criteria.
 
 ## Repository guide
 
