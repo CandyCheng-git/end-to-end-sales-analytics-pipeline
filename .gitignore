@@ -28,3 +28,6 @@ data/processed/
 dbt/target/
 dbt/logs/
 dbt_packages/
+
+# Olist raw dataset: keep local, never commit or bake into the Docker image
+data/raw/olist/
