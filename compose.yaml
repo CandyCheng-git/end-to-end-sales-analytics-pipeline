@@ -1,0 +1,10 @@
+services:
+  pipeline:
+    build: .
+    working_dir: /app
+    volumes:
+      - ./data:/app/data
+    command: >-
+      bash -lc "python scripts/ingest_sales.py &&
+      dbt --project-dir dbt --profiles-dir . build &&
+      python scripts/export_gold.py"
