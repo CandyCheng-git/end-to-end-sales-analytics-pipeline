@@ -1,0 +1,30 @@
+# Secrets / local config
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Conda / IDE
+.conda/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated artifacts
+data/warehouse/
+data/processed/
+*.duckdb
+*.duckdb.wal
+
+# dbt
+dbt/target/
+dbt/logs/
+dbt_packages/
