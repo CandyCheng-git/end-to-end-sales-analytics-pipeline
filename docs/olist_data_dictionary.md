@@ -2,7 +2,7 @@
 
 **Milestone:** M1 — Source Understanding
 **Data source:** [Olist Brazilian E-Commerce Public Dataset (Kaggle)](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
-**Status:** Working source dictionary, based on the standard Olist CSV schema. Source file names, row counts, column counts and candidate-key tests were verified in a local profiling run on 2026-10-25. **The individual field list and semantics should be compared with the actual local headers before declaring the data dictionary complete.**
+**Status:** M1 source dictionary verified for **all 9 original CSV filenames and all 52 column names in order** against the downloaded files using Docker/Pandas on 2026-10-26. Row counts, candidate keys and selected relationship checks were profiled locally on 2026-10-25. Field descriptions are interpretations of the source, not independently verified business contracts.
 
 ## Source table inventory and intended grain
 
@@ -20,7 +20,7 @@
 
 ## Expected source fields and interpretation
 
-*These are the standard Olist field names, not individually verified local header snapshots. Preserve source spelling, including `lenght`, rather than silently renaming upstream raw columns.*
+*All 52 field names and ordering were checked against the actual local CSV headers. Preserve original source spelling, including `lenght`, rather than silently renaming upstream raw columns.*
 
 ### Orders — 8 fields
 
@@ -146,7 +146,7 @@ For a customer or seller postal-prefix join, first produce an explicitly grained
 5. **Preserve exceptions:** Keep unmatched category values and source review rows; create explicit exception flags/marts as appropriate.
 6. **Validate candidate keys:** Observed uniqueness is based on one source snapshot, not a guarantee for future loads.
 
-## Local verification before final acceptance
+## Re-run local header verification
 
 Run this command from the project root to compare the expected columns above with the actual downloaded CSV header values:
 
@@ -154,4 +154,4 @@ Run this command from the project root to compare the expected columns above wit
 docker compose run --rm pipeline python -c "from pathlib import Path; import pandas as pd; root=Path('/app/data/raw/olist'); [(print(p.name + ': ' + ', '.join(pd.read_csv(p, nrows=0).columns))) for p in sorted(root.glob('*.csv'))]"
 ```
 
-The authoritative per-column missing values are in the generated local `data/processed/olist/olist_column_nulls.csv`. Update this dictionary if the downloaded source headers differ, then commit the verified documentation along with `scripts/profile_olist.py`, `.gitignore` and `.dockerignore`.
+The local verification matched **9/9 CSV headers and 52/52 column names in the same order**. The authoritative per-column missing values remain in local `data/processed/olist/olist_column_nulls.csv`. If the source snapshot changes, rerun this check and update the dictionary as necessary. The script, documentation and ignore rules were merged via PR #1.
