@@ -137,11 +137,16 @@ Orders with multiple review rows: 547
 
 **Verified key constraint in this snapshot:** (`review_id`, `order_id`) is unique, while each individual column is not guaranteed unique. Source review grain is a review/order association. In later Gold models, avoid order-level metric duplication when joining to reviews; define explicit review aggregation logic.
 
-## F. Next steps and reproducibility
+## F. Closeout verification and reproducibility
 
-1. Review `docs/olist_profiling.md` and `docs/olist_data_dictionary.md`, especially any schema-field definitions still awaiting verification against local headers.
-2. After reviewing the proposed branch and local uncommitted changes, integrate the source profiler + notes into the working branch without overwriting local edits.
-3. Introduce data-quality tests for key uniqueness, translated-category coverage, order status/delivery consistency, and join cardinality when implementing M2/M3.
+- [x] `docs/olist_profiling.md`, `docs/olist_data_dictionary.md`, script and ignore rules merged to `main` via [PR #1](https://github.com/CandyCheng-git/end-to-end-sales-analytics-pipeline/pull/1) on 2026-10-25 UTC.
+- [x] User-supplied local Docker command compared all nine source CSV header lists with the data dictionary; all **52 names, in order**, matched (2026-10-26 AEST).
+- [x] User-supplied local Docker Compose run after the merge completed: 11 synthetic rows ingested, 5 dbt models built, 17 dbt data tests passed (`PASS=22 WARN=0 ERROR=0`), and `data/processed/daily_sales.csv` exported.
+- [x] GitHub Actions Python unit tests passed for the merge commit. **This workflow does not run real Olist profiling or the full dbt pipeline.**
+
+Next steps:
+
+1. Introduce data-quality tests for key uniqueness, translated-category coverage, order status/delivery consistency, and join cardinality when implementing M2/M3.
 4. Re-run commands against the same local Kaggle CSV snapshot when investigating changed results. The profiler emits file hashes to identify a source snapshot; results here refer to the user's 2026-10-25 local execution.
 
 **Evidence standard:** Console outputs were supplied by the user from local execution; these results have not been independently recomputed against the user's local CSVs by a GitHub runner.

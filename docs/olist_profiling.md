@@ -117,8 +117,8 @@ Review text is optional for many use cases; missing optional text must not cause
 - [x] Run source-level row count, null, key and FK profiling.
 - [x] Investigate unmatched categories and order delivery date gaps.
 - [x] Validate Review ID repetition, composite key uniqueness and whole-row duplicates.
-- [ ] Verify dictionary field names directly against the nine local CSV headers.
-- [ ] Commit profiling script, documentation and ignore rules to a clean development branch.
-- [ ] Rerun existing synthetic regression tests after committing the M1 change set.
+- [x] Verify dictionary field names and ordering directly against all nine local CSV headers (52 columns matched; local Docker/Pandas check, 2026-10-26).
+- [x] Commit profiling script, documentation and ignore rules; [PR #1 merged to `main`](https://github.com/CandyCheng-git/end-to-end-sales-analytics-pipeline/pull/1).
+- [x] Rerun existing synthetic Compose regression after merge (11 rows ingested; 5 dbt models; 17 data tests; `PASS=22 WARN=0 ERROR=0`; CSV exported).
 
 **Scope boundary:** No Bronze/DuckDB ingestion of Olist has been completed under this milestone; that work belongs to M2.

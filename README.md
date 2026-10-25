@@ -10,12 +10,12 @@ The provided dataset is **synthetic demonstration data**, not client or employer
 
 ## Development roadmap — Olist migration
 
-The existing 11-row synthetic pipeline is a **verified local baseline**, not the final dataset. The next goal is to add the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) without removing the regression-test baseline. Olist, Power BI, Databricks and the extensions below are **not yet implemented**.
+The existing 11-row synthetic pipeline is a **verified local baseline**, not the final dataset. **M1 is completed:** the nine CSVs in the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) were acquired and profiled locally, with the profiling code and evidence committed. **M2 Olist Bronze ingestion, Olist Silver/Gold modelling, Power BI and Databricks are not yet implemented.** The synthetic baseline remains available for regression checks.
 
 | Milestone | Scope | Status | Indicative timing |
 | --- | --- | --- | --- |
 | M0 | Preserve the verified synthetic local pipeline | **Completed** (baseline) | 2026-10-25 |
-| M1 | Acquire and profile Olist's nine source CSVs | Planned | Week 1 |
+| M1 | Acquire and profile Olist's nine source CSVs | **Completed (local evidence + merged PR #1)** | 2026-10-25–26 |
 | M2 | Build Python ingestion and DuckDB Bronze tables | Planned | Week 2 |
 | M3 | Implement dbt Silver staging and cleaning | Planned | Week 3 |
 | M4 | Build Gold dimensional models and business metrics | Planned | Weeks 4–5 |
@@ -28,6 +28,18 @@ The existing 11-row synthetic pipeline is a **verified local baseline**, not the
 *Timelines are estimates based on roughly 8–12 hours per week, not delivery commitments. M0–M6 define the first complete local Olist portfolio release; advanced extensions can be reprioritised.*
 
 **[Read the complete M0–M9 milestone plan →](docs/portfolio-next-steps.md)** for tasks, deliverables, dependencies, acceptance criteria, and suggested commits.
+
+### M1 — Olist source profiling (completed)
+
+The nine original Olist CSVs are stored **locally**, excluded by both `.gitignore` and `.dockerignore`, and mounted into the container via Docker Compose. Run the committed read-only profiler from the repository root after acquiring the data:
+
+```powershell
+docker compose run --rm pipeline python scripts/profile_olist.py
+```
+
+The local run profiled nine source tables (including 99,441 orders, 99,224 review rows and 1,000,163 geolocation rows), wrote five Git-ignored profiling reports, and documented source keys, missing values and relationship exceptions. All nine sets of headers were compared against the committed data dictionary. After merging [PR #1](https://github.com/CandyCheng-git/end-to-end-sales-analytics-pipeline/pull/1), the synthetic Compose pipeline was re-run locally: 11 rows ingested, 5 dbt models built, all 17 dbt tests passed (`PASS=22 WARN=0 ERROR=0`), and `daily_sales.csv` was exported. GitHub Actions independently passed **Python unit tests only**, not the raw-Olist profiling or end-to-end dbt pipeline.
+
+See [source profiling findings](docs/olist_profiling.md), [verified source dictionary](docs/olist_data_dictionary.md) and [executed commands](docs/olist-m1-execution-notes.md). These results are **M1 profiling evidence, not Olist warehouse ingestion**.
 
 ## Architecture
 
@@ -143,7 +155,7 @@ dbt models declare `not_null`, `unique`, `accepted_values` and `relationships` t
 
 ## Current limitations
 
-The verified execution and metrics above relate **only to the synthetic local dataset**. The Olist migration has not started in this repository.
+The verified downstream warehouse execution and metrics above relate **only to the synthetic local dataset**. Olist M1 source acquisition and profiling are completed; **Olist Bronze ingestion, Silver/Gold models and business KPIs have not been built**.
 
 - No Olist ingestion, Silver/Gold Olist models or Olist business metrics have been verified yet.
 - The Power BI report and Databricks integration are not yet implemented.
@@ -159,8 +171,8 @@ See the [complete development roadmap](docs/portfolio-next-steps.md) for planned
 ├── .github/workflows/unit-tests.yml
 ├── data/raw/sample_sales.csv
 ├── dbt/models/{staging,marts}/
-├── docs/
-├── scripts/{ingest_sales,export_gold}.py
+├── docs/{olist_profiling,olist_data_dictionary,olist-m1-execution-notes}.md
+├── scripts/{ingest_sales,export_gold,profile_olist}.py
 ├── src/sales_analytics/validation.py
 ├── tests/test_validation.py
 ├── environment.yml
