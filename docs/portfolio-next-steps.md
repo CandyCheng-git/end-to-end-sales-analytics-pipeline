@@ -17,7 +17,7 @@
 | --- | --- | --- | --- | --- |
 | M0 | Verified local synthetic pipeline preserved | **Completed (baseline)** | 2026-10-25 | — |
 | M1 | Olist acquisition, profiling and data dictionary | **Completed (local verification + PR #1 merged)** | 2026-10-25–26 | M0 |
-| M2 | Validated Python ingestion into Bronze | Planned | Week 2 | M1 |
+| M2 | Validated Python ingestion into Bronze | **In progress; real-source run pending** | Week 2 | M1 |
 | M3 | dbt Silver source transformations | Planned | Week 3 | M2 |
 | M4 | Gold dimensional warehouse and reconciled KPIs | Planned | Weeks 4–5 | M3 |
 | M5 | Quality gates, integration tests, CI | Planned | Week 6 | M2–M4 |
@@ -78,7 +78,7 @@ Do **not** join order items directly to payments, reviews or raw geolocation and
 
 ## M2 — Python ingestion and Bronze tables
 
-**Status:** Planned · **Estimate:** Week 2 · **Depends on:** M1
+**Status:** In progress (implementation on feature branch; full-source verification pending) · **Estimate:** Week 2 · **Depends on:** M1
 
 **Objective:** Load the nine sources into DuckDB without breaking the synthetic pipeline.
 
@@ -92,6 +92,17 @@ Do **not** join order items directly to payments, reviews or raw geolocation and
 **Deliverables:** Ingestion script, Bronze tables, tests, audit evidence, updated run instructions.
 
 **Acceptance criteria:** All nine tables load; counts reconcile to source files; rerunning does not accidentally duplicate records; old synthetic flow remains available.
+
+**Implementation added for review:** `scripts/ingest_olist.py`, fixture-based tests and an `olist-ingestion` Compose service. The loader creates nine all-VARCHAR Bronze tables, checks exact M1 headers, reconciles row counts, stores checksum/ingestion metadata in `bronze.olist_ingestion_audit`, and commits table replacements atomically. Existing `bronze.raw_sales` and the synthetic service remain untouched.
+
+**Commands to verify locally after obtaining all nine ignored CSVs:**
+- `docker compose build`
+- `docker compose run --rm olist-ingestion`
+- Re-run the Olist command to confirm deterministic table row counts.
+- `docker compose run --rm pipeline` to check the synthetic baseline.
+- `docker compose run --rm pipeline python -m pytest -q` for fixture-based tests.
+
+**Remaining M2 acceptance:** Save the observed real-source DuckDB counts and audit evidence, compare with the M1 snapshot, rerun all commands, and update this milestone to Completed only if verification succeeds. Neither GitHub Actions nor the current repository contains the raw Kaggle CSV files.
 
 **Suggested commit:** `feat(ingestion): load Olist CSV sources into DuckDB bronze`
 
