@@ -8,3 +8,10 @@ services:
       bash -lc "python scripts/ingest_sales.py &&
       dbt build --project-dir dbt --profiles-dir . &&
       python scripts/export_gold.py"
+
+  olist-ingestion:
+    build: .
+    working_dir: /app
+    volumes:
+      - ./data:/app/data
+    command: python scripts/ingest_olist.py
