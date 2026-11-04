@@ -10,13 +10,13 @@ The provided dataset is **synthetic demonstration data**, not client or employer
 
 ## Development roadmap — Olist migration
 
-The existing 11-row synthetic pipeline is a **verified local baseline**, not the final dataset. **M1 is completed:** the nine CSVs in the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) were acquired and profiled locally, with the profiling code and evidence committed. **M2 Bronze ingestion code is under review (full nine-file validation pending); Olist Silver/Gold modelling, Power BI and Databricks are not yet implemented.** The synthetic baseline remains available for regression checks.
+The existing 11-row synthetic pipeline is a **verified local baseline**, not the final dataset. **M1 is completed:** the nine CSVs in the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) were acquired and profiled locally, with the profiling code and evidence committed. **M2 Bronze ingestion has been verified locally on all nine Olist sources (user-supplied run evidence, 2026-11-04); Olist Silver/Gold modelling, Power BI and Databricks are not yet implemented.** The synthetic baseline remains available for regression checks.
 
 | Milestone | Scope | Status | Indicative timing |
 | --- | --- | --- | --- |
 | M0 | Preserve the verified synthetic local pipeline | **Completed** (baseline) | 2026-10-25 |
 | M1 | Acquire and profile Olist's nine source CSVs | **Completed (local evidence + merged PR #1)** | 2026-10-25–26 |
-| M2 | Build Python ingestion and DuckDB Bronze tables | **In progress — source-data verification pending** | Week 2 |
+| M2 | Build Python ingestion and DuckDB Bronze tables | **Completed — local verification evidenced** | 2026-11-04 |
 | M3 | Implement dbt Silver staging and cleaning | Planned | Week 3 |
 | M4 | Build Gold dimensional models and business metrics | Planned | Weeks 4–5 |
 | M5 | Add data quality, reconciliation and end-to-end CI | Planned | Week 6 |
@@ -41,7 +41,7 @@ The local run profiled nine source tables (including 99,441 orders, 99,224 revie
 
 See [source profiling findings](docs/olist_profiling.md), [verified source dictionary](docs/olist_data_dictionary.md) and [executed commands](docs/olist-m1-execution-notes.md). These results are **M1 profiling evidence, not Olist warehouse ingestion**.
 
-## M2 — Olist Bronze ingestion (implementation in review)
+## M2 — Olist Bronze ingestion (locally verified)
 
 M2 adds a separate, deterministic **full-refresh** loader for all nine locally held Olist CSVs. This does not alter the default synthetic Compose pipeline. The loader validates the exact 52 source headers and every CSV row width before modifying DuckDB. It loads columns as `VARCHAR` (including leading-zero ZIP prefixes); casting, deduplication, geolocation aggregation and business decisions are intentionally deferred to dbt Silver.
 
@@ -57,7 +57,9 @@ The loader creates `bronze.olist_orders`, `olist_order_items`, `olist_order_paym
 
 All nine table replacements and audit inserts run in one DuckDB transaction. A failed run rolls back; a successful repeat run replaces source tables rather than accumulating duplicates, while retaining historical audit entries.
 
-**Verification boundary:** New automated tests use tiny, generated CSV fixtures and do **not** contain or run the original Olist dataset. The M1 snapshot counted 1,550,922 total source rows across nine files, but successful M2 execution on those real files must still be evidenced by a local Docker run before marking M2 complete. GitHub Actions exercises Python tests and the fixture-based DuckDB loader, not the full Kaggle dataset or dbt pipeline.
+**Verified 2026-11-04 (user-supplied Windows / Docker output):** Both full-source runs loaded 9 Olist tables and 1,550,922 rows, with the same per-source row counts each time. The audit query returned two distinct run IDs, each with 9 source files and matching totals of 1,550,922 input and Bronze rows. The post-ingestion synthetic Compose run built 5 models and passed 17 dbt data tests (`PASS=22 WARN=0 ERROR=0`), exported `daily_sales.csv`, and local pytest passed 17 tests. See [M2 executed evidence](docs/olist-m2-execution-notes.md). GitHub Actions independently ran **fixture-based Python/DuckDB tests only**; it did not receive the Kaggle CSVs or execute the full dbt pipeline. Source SHA256 values were captured and rechecked during each run, but the shared transcript did not include a separate comparison of these hashes with the M1 report.
+
+- `docs/olist-m2-execution-notes.md`: user-provided full-source row counts, two-run audit reconciliation, synthetic regression and test evidence.
 
 ## Architecture
 
@@ -173,9 +175,9 @@ dbt models declare `not_null`, `unique`, `accepted_values` and `relationships` t
 
 ## Current limitations
 
-The verified downstream warehouse execution and metrics above relate **only to the synthetic local dataset**. Olist M1 source acquisition and profiling are completed; **Olist Bronze ingestion is implemented but not yet verified against all nine real source files; Silver/Gold models and business KPIs have not been built**.
+The verified downstream warehouse execution and metrics above relate **only to the synthetic local dataset**. Olist M1 source acquisition and profiling are completed; **Olist Bronze ingestion has been verified locally on all nine real source files; Olist Silver/Gold models and business KPIs have not been built**.
 
-- Olist Bronze ingestion has fixture-based tests but has not yet been verified on all nine local Olist source CSVs; Silver/Gold models and Olist business metrics are also unverified.
+- Olist Bronze ingestion is locally verified, but automated CI does not process the original Kaggle source files; Silver/Gold models and Olist business metrics remain unverified.
 - The Power BI report and Databricks integration are not yet implemented.
 - GitHub Actions currently runs Python unit tests only; full-pipeline CI, scheduling, incremental loads and production monitoring remain future work.
 - The sample model is a local proof of concept, not a production deployment.
