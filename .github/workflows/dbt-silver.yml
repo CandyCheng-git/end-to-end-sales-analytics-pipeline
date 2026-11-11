@@ -21,6 +21,8 @@ jobs:
       - name: Seed small synthetic Olist Bronze fixtures
         run: python scripts/ci_olist_fixtures.py seed
       - name: Build all Olist Silver models and data tests
+        env:
+          DBT_DUCKDB_PATH: data/ci/sales.duckdb
         run: dbt build --project-dir dbt --profiles-dir . --select "stg_olist_*" "int_olist_*"
       - name: Check Olist fixture grains and mapping outcomes
         run: python scripts/ci_olist_fixtures.py check

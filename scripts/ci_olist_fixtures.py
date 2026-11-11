@@ -5,8 +5,9 @@ Run in the repository root:
     dbt build --project-dir dbt --profiles-dir . --select "stg_olist_*" "int_olist_*"
     python scripts/ci_olist_fixtures.py check
 
-Never run the seed action against a warehouse containing real Olist data: M2
-ingestion full-refreshes the nine Olist Bronze tables.
+Fixtures are isolated in data/ci/sales.duckdb, not the owner\'s
+real warehouse in data/warehouse/sales.duckdb. Set DBT_DUCKDB_PATH
+to data/ci/sales.duckdb when running the Olist dbt build.
 """
 
 from __future__ import annotations
@@ -21,7 +22,7 @@ import duckdb
 from ingest_olist import SOURCE_SCHEMAS, ingest_olist
 
 ROOT = Path(__file__).resolve().parents[1]
-DB_PATH = ROOT / "data" / "warehouse" / "sales.duckdb"
+DB_PATH = ROOT / "data" / "ci" / "sales.duckdb"
 
 # Every tuple follows its schema's canonical M2 source CSV header ordering.
 # Intentional cases: repeat customer identity, multi-item order, split payment,

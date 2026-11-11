@@ -114,7 +114,7 @@ The default pipeline's `--select stg_sales+` keeps the synthetic regression sepa
 
 ### GitHub Actions fixture-based dbt integration checks
 
-The `.github/workflows/dbt-silver.yml` workflow generates a **small, explicitly synthetic** Olist dataset locally inside the GitHub runner using the nine M2 source schemas. The fixture ingestion uses the existing M2 `ingest_olist` implementation, so no original Olist CSVs are uploaded or downloaded.
+The `.github/workflows/dbt-silver.yml` workflow generates a **small, explicitly synthetic** Olist dataset locally inside the GitHub runner using the nine M2 source schemas. The fixture ingestion uses the existing M2 `ingest_olist` implementation, so no original Olist CSVs are uploaded or downloaded. Fixtures are written to `data/ci/sales.duckdb`; the dbt workflow overrides `DBT_DUCKDB_PATH` for the Olist build only, leaving the actual local warehouse at `data/warehouse/sales.duckdb` untouched. The existing synthetic regression continues using the normal default warehouse.
 
 It then builds **all nine Olist staging models and both intermediate models**, executes their configured dbt data tests, and checks representative data grain, category-mapping and ZIP-lookup cardinality invariants. The workflow also rebuilds the existing synthetic sales models and checks that `daily_sales.csv` was exported.
 
