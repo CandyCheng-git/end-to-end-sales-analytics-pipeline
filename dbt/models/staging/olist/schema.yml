@@ -1,0 +1,167 @@
+version: 2
+
+models:
+  - name: stg_olist_orders
+    description: One row per Olist order, with typed order timestamps.
+    columns:
+      - name: order_id
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_olist_customers')
+                field: customer_id
+      - name: order_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [delivered, invoiced, shipped, processing, unavailable, canceled, created, approved]
+
+  - name: stg_olist_order_items
+    description: One row per order_id and order_item_id.
+    columns:
+      - name: order_item_key
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_olist_orders')
+                field: order_id
+      - name: order_item_id
+        data_tests:
+          - not_null
+      - name: price
+        data_tests:
+          - not_null
+      - name: freight_value
+        data_tests:
+          - not_null
+
+  - name: stg_olist_order_payments
+    description: One row per order_id and payment_sequential; no payment aggregation.
+    columns:
+      - name: order_payment_key
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_olist_orders')
+                field: order_id
+      - name: payment_sequential
+        data_tests:
+          - not_null
+      - name: payment_type
+        data_tests:
+          - not_null
+      - name: payment_installments
+        data_tests:
+          - not_null
+      - name: payment_value
+        data_tests:
+          - not_null
+
+  - name: stg_olist_order_reviews
+    description: One row per review_id and order_id; repeated review IDs are preserved.
+    columns:
+      - name: review_key
+        data_tests:
+          - not_null
+          - unique
+      - name: review_id
+        data_tests:
+          - not_null
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_olist_orders')
+                field: order_id
+      - name: review_score
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5]
+
+  - name: stg_olist_customers
+    description: One row per customer_id; customer_unique_id can repeat across orders.
+    columns:
+      - name: customer_id
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_unique_id
+        data_tests:
+          - not_null
+      - name: customer_zip_code_prefix
+        data_tests:
+          - not_null
+      - name: customer_city
+        data_tests:
+          - not_null
+      - name: customer_state
+        data_tests:
+          - not_null
+
+  - name: stg_olist_products
+    description: One row per product_id; optional product attributes can be missing.
+    columns:
+      - name: product_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_olist_sellers
+    description: One row per seller_id; ZIP code prefixes remain strings.
+    columns:
+      - name: seller_id
+        data_tests:
+          - not_null
+          - unique
+      - name: seller_zip_code_prefix
+        data_tests:
+          - not_null
+      - name: seller_city
+        data_tests:
+          - not_null
+      - name: seller_state
+        data_tests:
+          - not_null
+
+  - name: stg_olist_geolocation
+    description: Geolocation observations at source grain; ZIP prefixes may repeat.
+    columns:
+      - name: geolocation_zip_code_prefix
+        data_tests:
+          - not_null
+      - name: geolocation_lat
+        data_tests:
+          - not_null
+      - name: geolocation_lng
+        data_tests:
+          - not_null
+
+  - name: stg_olist_category_name_translation
+    description: One row per Portuguese category and its English translation.
+    columns:
+      - name: product_category_name
+        data_tests:
+          - not_null
+          - unique
+      - name: product_category_name_english
+        data_tests:
+          - not_null

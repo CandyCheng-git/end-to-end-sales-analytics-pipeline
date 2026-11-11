@@ -1,4 +1,5 @@
 version: 2
+
 sources:
   - name: bronze
     database: sales
@@ -6,3 +7,12 @@ sources:
     tables:
       - name: raw_sales
         description: Validated synthetic source rows loaded by the Python ingestion script.
+      - name: olist_orders
+      - name: olist_order_items
+      - name: olist_order_payments
+      - name: olist_order_reviews
+      - name: olist_customers
+      - name: olist_products
+      - name: olist_sellers
+      - name: olist_geolocation
+      - name: olist_category_name_translation

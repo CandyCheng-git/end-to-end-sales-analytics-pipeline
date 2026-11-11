@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: int_olist_geolocation_zip
+    description: One row per ZIP prefix; median coordinates and original observation counts.
+    columns:
+      - name: geolocation_zip_code_prefix
+        data_tests:
+          - not_null
+          - unique
+      - name: median_latitude
+        data_tests:
+          - not_null
+      - name: median_longitude
+        data_tests:
+          - not_null
+      - name: observation_count
+        data_tests:
+          - not_null
+
+  - name: int_olist_products_enriched
+    description: Product-level translation enrichment that preserves missing and unmapped categories.
+    columns:
+      - name: product_id
+        data_tests:
+          - not_null
+          - unique
+      - name: category_mapping_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [translated, missing_source_category, unmapped_translation]
