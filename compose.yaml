@@ -6,7 +6,7 @@ services:
       - ./data:/app/data
     command: >-
       bash -lc "python scripts/ingest_sales.py &&
-      dbt build --project-dir dbt --profiles-dir . &&
+      dbt build --project-dir dbt --profiles-dir . --select stg_sales+ &&
       python scripts/export_gold.py"
 
   olist-ingestion:

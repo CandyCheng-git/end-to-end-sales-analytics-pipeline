@@ -3,6 +3,6 @@ sales_analytics:
   outputs:
     dev:
       type: duckdb
-      path: data/warehouse/sales.duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', 'data/warehouse/sales.duckdb') }}"
       schema: analytics
       threads: 2

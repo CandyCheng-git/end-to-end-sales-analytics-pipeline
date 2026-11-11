@@ -1,8 +1,22 @@
+
 version: 2
+
 sources:
   - name: bronze
     database: sales
     schema: bronze
     tables:
       - name: raw_sales
-        description: Validated synthetic source rows loaded by the Python ingestion script.
+        description: Synthetic source data.
+
+      - name: olist_orders
+        description: Raw Olist orders from M2 Bronze ingestion.
+
+      - name: olist_order_items
+      - name: olist_order_payments
+      - name: olist_order_reviews
+      - name: olist_customers
+      - name: olist_products
+      - name: olist_sellers
+      - name: olist_geolocation
+      - name: olist_category_name_translation
