@@ -1,9 +1,12 @@
 # M3 — Olist Silver transformations: local execution and closeout evidence
 
-**Project:** End-to-End Sales Analytics Pipeline  
-**Milestone:** M3 — dbt Silver transformations  
-**Date:** 2026-11-11 (Australia/Melbourne)  
-**Feature branch:** feat/m3-olist-silver-transformations  
+**Project:** End-to-End Sales Analytics Pipeline
+
+**Milestone:** M3 — dbt Silver transformations
+
+**Date:** 2026-11-11 (Australia/Melbourne)
+
+**Feature branch:** feat/m3-olist-silver-transformations
 **Evidence provenance:** Results reported by the project owner from Windows PowerShell, Docker Compose and DBeaver. The original Olist data was not available to the GitHub connector or GitHub-hosted CI for independent full-data re-execution.
 
 ## Executive summary
@@ -109,6 +112,14 @@ Reported terminal result: **PASS=22 WARN=0 ERROR=0 TOTAL=22** (5 models + 17 dat
 
 The default pipeline's `--select stg_sales+` keeps the synthetic regression separate from Olist source-dependent models.
 
+### GitHub Actions fixture-based dbt integration checks
+
+The `.github/workflows/dbt-silver.yml` workflow generates a **small, explicitly synthetic** Olist dataset locally inside the GitHub runner using the nine M2 source schemas. The fixture ingestion uses the existing M2 `ingest_olist` implementation, so no original Olist CSVs are uploaded or downloaded.
+
+It then builds **all nine Olist staging models and both intermediate models**, executes their configured dbt data tests, and checks representative data grain, category-mapping and ZIP-lookup cardinality invariants. The workflow also rebuilds the existing synthetic sales models and checks that `daily_sales.csv` was exported.
+
+**Scope boundary:** Synthetic-fixture CI can catch broken SQL/Jinja, relationships, uniqueness tests and example fanout regressions. It does **not** replace the owner-reported full Olist row-count reconciliation, geographic coverage, type-conversion audit or full-snapshot business-rule checks. Workflow pass/fail is reported by GitHub Actions for each new commit.
+
 ### Explicit type-conversion checks
 
 For non-empty Bronze values that fail the specified `TRY_CAST`:
@@ -175,4 +186,4 @@ Type casting and global coordinate ranges passed, but detailed business-rule val
 
 **Conclusion:** M3 implementation and local validation acceptance are evidenced. M4 should define business metrics and fact-table grain before implementing revenue, payment reconciliation, repeat-customer KPIs and seller performance. Do not directly join multiple one-to-many payment/review tables onto order items.
 
-**Source-control note:** This GitHub branch was reconstructed from the explicitly recorded M3 SQL/YAML snippets and local validation transcript. It is not a byte-for-byte push of the owner's uncommitted Windows working tree; compare any local differences before syncing or overwriting either side.
+**Source-control note:** The originally reconstructed GitHub files were superseded by the owner's locally validated SQL/YAML, preserved in local backup commit `becc28b`. The owner verified a zero code diff for all M3 paths against the final local tree, re-ran both dbt builds successfully, and pushed that history to PR #4. Later CI/documentation-only commits are validated separately; full-scale Olist evidence remains based on the owner's local source snapshot.
