@@ -1,25 +1,25 @@
 # End-to-End Sales Analytics Pipeline
 
-> **Local pipeline verified · Portfolio work in progress** — a reproducible ELT project using Python, DuckDB, dbt Core, Conda (Miniforge) and Docker Compose. The local pipeline has been run successfully; Databricks integration and the Power BI dashboard are **planned, not implemented**.
+> **M0–M3 implemented and verified · M4 Gold next** — Python + DuckDB + dbt Core + Docker Compose ELT portfolio. Nine Olist Bronze sources and 11 Silver models are implemented, with local full-data evidence and GitHub Actions fixture-based dbt CI. Olist Gold, Power BI and Databricks remain **planned, not implemented**.
 
 ## Project overview
 
 Sales data often arrives as raw transaction records with repeated updates, mixed status values and fields unsuitable for reporting. This project demonstrates a local ELT workflow that validates sample order-line data, stores it in a Bronze table, deduplicates and models it with dbt, tests warehouse models, and exports a daily-sales summary suitable for a downstream BI tool.
 
-The provided dataset is **synthetic demonstration data**, not client or employer information.
+The original 11-row baseline is **synthetic demonstration data**, not client or employer information. The Olist branch processes the public historical Brazilian E-Commerce dataset locally; its nine original CSVs and generated DuckDB warehouse are not committed to Git.
 
 ## Development roadmap — Olist migration
 
-The existing 11-row synthetic pipeline is a **verified local baseline**, not the final dataset. **M1 is completed:** the nine CSVs in the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) were acquired and profiled locally, with the profiling code and evidence committed. **M2 Bronze ingestion has been verified locally on all nine Olist sources (user-supplied run evidence, 2026-11-04); Olist Silver/Gold modelling, Power BI and Databricks are not yet implemented.** The synthetic baseline remains available for regression checks.
+The existing 11-row synthetic pipeline remains a **verified regression baseline**. M1 profiled the nine CSVs in the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce); M2 ingested them into DuckDB Bronze; **M3 added nine typed staging views, two intermediate models and dbt tests**. M3 [PR #4](https://github.com/CandyCheng-git/end-to-end-sales-analytics-pipeline/pull/4) was merged on 2026-11-11. Olist Gold marts, Power BI and Databricks are still unimplemented.
 
 | Milestone | Scope | Status | Indicative timing |
 | --- | --- | --- | --- |
 | M0 | Preserve the verified synthetic local pipeline | **Completed** (baseline) | 2026-10-25 |
 | M1 | Acquire and profile Olist's nine source CSVs | **Completed (local evidence + merged PR #1)** | 2026-10-25–26 |
 | M2 | Build Python ingestion and DuckDB Bronze tables | **Completed — local verification evidenced** | 2026-11-04 |
-| M3 | Implement dbt Silver staging and cleaning | Planned | Week 3 |
+| M3 | Implement dbt Silver staging and cleaning | **Completed — merged PR #4; local full-Olist + fixture CI verified** | 2026-11-11 |
 | M4 | Build Gold dimensional models and business metrics | Planned | Weeks 4–5 |
-| M5 | Add data quality, reconciliation and end-to-end CI | Planned | Week 6 |
+| M5 | Expand Gold reconciliation, data quality and CI | **Planned — basic Python/dbt fixture CI already in M3** | Week 6 |
 | M6 | Deliver Power BI dashboard and portfolio v1.0 | Planned | Weeks 7–8 |
 | M7 | Integrate Olist marketing funnel data | Optional | Week 9 |
 | M8 | Migrate and reconcile models in Databricks / Delta Lake | Planned extension | Weeks 10–11+ |
@@ -27,7 +27,7 @@ The existing 11-row synthetic pipeline is a **verified local baseline**, not the
 
 *Timelines are estimates based on roughly 8–12 hours per week, not delivery commitments. M0–M6 define the first complete local Olist portfolio release; advanced extensions can be reprioritised.*
 
-**[Read the complete M0–M9 milestone plan →](docs/portfolio-next-steps.md)** for tasks, deliverables, dependencies, acceptance criteria, and suggested commits.
+**[Milestone task tracker and M4 priorities](docs/portfolio-next-steps.md)** is the single source of truth for tasks, deliverables, dependencies, acceptance criteria and evidence. M3 execution evidence: [local M3 closeout](docs/olist-m3-execution-notes.md).
 
 ### M1 — Olist source profiling (completed)
 
@@ -61,6 +61,24 @@ All nine table replacements and audit inserts run in one DuckDB transaction. A f
 
 - `docs/olist-m2-execution-notes.md`: user-provided full-source row counts, two-run audit reconciliation, synthetic regression and test evidence.
 
+## M3 — Olist Silver transformations (completed)
+
+M3 creates **nine staging views** for orders, order items, payments, reviews, customers, products, sellers, geolocation, and Portuguese-to-English category translations. It also creates **two intermediate models**: `int_olist_geolocation_zip` (a ZIP-prefix table using median latitude/longitude to avoid join fanout) and `int_olist_products_enriched` (product categories plus explicit mapping status). Order-item, payment, and review grains remain separate; ZIP prefixes remain text to preserve leading zeros.
+
+Run after you have locally ingested all nine Olist CSVs into Bronze. Disconnect GUI DuckDB clients before running dbt against the same warehouse:
+
+```powershell
+docker compose build pipeline
+docker compose run --rm olist-ingestion
+docker compose run --rm pipeline dbt build --project-dir dbt --profiles-dir . --select "stg_olist_*" "int_olist_*"
+```
+
+**Owner-reported full Olist run (2026-11-11):** `PASS=67 WARN=0 ERROR=0` (11 models + 56 dbt data tests), nine Bronze–Silver counts reconciled at **1,550,922 rows**, 19,015 distinct ZIP prefixes and 32,951 products retained. A reviewed order-item/ZIP join preserved **112,650 of 112,650** item keys without core-business join misses. Local synthetic regression separately passed `PASS=22 WARN=0 ERROR=0` and exported `daily_sales.csv`. See [M3 execution notes](docs/olist-m3-execution-notes.md) for scope, anomalies and provenance.
+
+**GitHub CI:** [`.github/workflows/dbt-silver.yml`](.github/workflows/dbt-silver.yml) creates a **small synthetic nine-table Olist fixture** in an isolated `data/ci/sales.duckdb`, runs the same 11 Silver models + 56 tests, asserts ZIP/category/review/payment/join grains, then runs the 5-model + 17-test synthetic baseline and export. The separate Python workflow runs 17 pytest tests. **A green CI run does not mean GitHub processed the original full Olist CSVs.** Never run the fixture seed against the production/local real-data warehouse; the fixture seeder writes to `data/ci/` only.
+
+**M4 next:** Define the Gold fact/dimension grains and a [metric contract](docs/portfolio-next-steps.md#m4--gold-star-schema-and-business-metrics) before writing revenue SQL. Olist item GMV, order-level payments and review rows cannot be safely summed in one raw one-to-many join.
+
 ## Architecture
 
 ```mermaid
@@ -76,7 +94,7 @@ flowchart LR
     E -. Future migration .-> J[Databricks]
 ```
 
-**Stack currently in the project:** Python 3.12 · DuckDB · SQL · dbt-duckdb · Conda · Docker Compose · pytest · GitHub Actions (unit-test workflow).
+**Stack currently in the project:** Python 3.12 · DuckDB · SQL · dbt-duckdb · Conda · Docker Compose · pytest · GitHub Actions (Python unit tests and fixture-based dbt Silver integration). The diagram above depicts the preserved synthetic baseline; M3 adds a separate Olist Bronze → Silver path.
 
 | Layer | Implementation | Purpose |
 | --- | --- | --- |
@@ -96,7 +114,7 @@ conda env create -f environment.yml
 conda activate sales-analytics
 python scripts/ingest_sales.py
 dbt debug --project-dir dbt --profiles-dir .
-dbt build --project-dir dbt --profiles-dir .
+dbt build --project-dir dbt --profiles-dir . --select stg_sales+
 python scripts/export_gold.py
 python -m pytest -q
 ```
@@ -115,7 +133,7 @@ docker compose build
 docker compose run --rm pipeline
 ```
 
-The Compose command runs ingestion, dbt models/tests and CSV export in order. `data/` is mounted to persist generated warehouse and CSV artifacts on your host.
+The default Compose `pipeline` command runs **only the original synthetic** ingestion, `dbt build --select stg_sales+`, and CSV export. This intentional selection avoids requiring local Olist Bronze tables for the baseline. `data/` is mounted to persist generated warehouse and CSV artifacts on your host; the Olist build uses the separate command in M3 above.
 
 **Verified on Windows with Docker Desktop (2026-10-25):** the Docker image built successfully, and the full Compose command completed ingestion, dbt models/tests and CSV export. This is a local development validation, not a production deployment or a guarantee of identical results on every machine.
 
@@ -171,30 +189,33 @@ These four rows were checked against the exported CSV after the successful local
 
 ## Data quality
 
-dbt models declare `not_null`, `unique`, `accepted_values` and `relationships` tests. Python ingestion rejects missing fields, invalid dates, invalid quantities/prices and unknown statuses before writing the Bronze table. **All 17 dbt data tests and all 11 Python unit tests passed locally** on 2026-10-25. The GitHub Actions workflow currently executes **Python unit tests only**; it does **not** run the complete ingestion → dbt → export integration pipeline.
+dbt models declare `not_null`, `unique`, `accepted_values` and `relationships` tests. The original synthetic loader validates its records; Olist Bronze uses separate audited full-refresh ingestion. **As of M3**, 56 Olist dbt data tests and 17 synthetic dbt data tests passed locally and on **synthetic-fixture GitHub CI**, while 17 pytest tests passed on GitHub CI. The full original Olist CSV data is validated locally only; GitHub CI does not access or reconcile those historical source files.
 
 ## Current limitations
 
-The verified downstream warehouse execution and metrics above relate **only to the synthetic local dataset**. Olist M1 source acquisition and profiling are completed; **Olist Bronze ingestion has been verified locally on all nine real source files; Olist Silver/Gold models and business KPIs have not been built**.
+- Olist M1 profiling, M2 Bronze and M3 Silver are implemented. **Olist Gold facts/dimensions, reconciled revenue KPIs and Power BI dashboards are not yet built**; the original synthetic Gold models do not represent final Olist KPIs.
+- Full original Olist CSVs and DuckDB warehouse remain local/ignored. CI uses a **small synthetic Olist fixture**, not the full 1,550,922-row historical snapshot.
+- M3 records exceptions, including category translation gaps, unmatched ZIP prefixes and delivery-date/status anomalies, without silently dropping records. These need explicit treatment in Gold business metric definitions.
+- Scheduling, incremental loads, monitoring and Databricks / Delta Lake are not yet implemented.
+- This is a documented portfolio system, not a production deployment.
 
-- Olist Bronze ingestion is locally verified, but automated CI does not process the original Kaggle source files; Silver/Gold models and Olist business metrics remain unverified.
-- The Power BI report and Databricks integration are not yet implemented.
-- GitHub Actions currently runs Python unit tests only; full-pipeline CI, scheduling, incremental loads and production monitoring remain future work.
-- The sample model is a local proof of concept, not a production deployment.
-
-See the [complete development roadmap](docs/portfolio-next-steps.md) for planned milestones and acceptance criteria.
+See the [milestone task tracker](docs/portfolio-next-steps.md) for M4–M9 tasks and acceptance criteria.
 
 ## Repository guide
 
 ```text
 .
-├── .github/workflows/unit-tests.yml
-├── data/raw/sample_sales.csv
-├── dbt/models/{staging,marts}/
-├── docs/{olist_profiling,olist_data_dictionary,olist-m1-execution-notes}.md
-├── scripts/{ingest_sales,ingest_olist,export_gold,profile_olist}.py
-├── src/sales_analytics/validation.py
-├── tests/test_validation.py
+├── .github/workflows/{unit-tests,dbt-silver}.yml
+├── data/raw/sample_sales.csv       # committed synthetic baseline
+├── data/raw/olist/                # local, ignored original Olist CSVs
+├── data/ci/                       # ignored CI fixture warehouse
+├── dbt/models/staging/{stg_sales.sql,olist/}
+├── dbt/models/intermediate/olist/
+├── dbt/models/marts/              # original synthetic baseline only
+├── docs/portfolio-next-steps.md   # canonical task tracker
+├── docs/olist-m{1,2,3}-execution-notes.md
+├── scripts/{ingest_olist,ci_olist_fixtures,ingest_sales,export_gold}.py
+├── tests/
 ├── environment.yml
 ├── profiles.yml
 ├── Dockerfile
@@ -203,4 +224,4 @@ See the [complete development roadmap](docs/portfolio-next-steps.md) for planned
 
 ## About this portfolio
 
-This repository demonstrates an **executed and locally validated** Conda + Docker analytics workflow, including a documented reporting grain, transformations, quality checks and reproducible commands. It is **not** presented as production-ready, an automated full-pipeline CI build, or completed Databricks / Power BI work. Screenshots and cloud integration evidence will be added only after those features are actually implemented.
+This repository demonstrates completed **Olist Bronze + Silver** transformations with local full-dataset reconciliation, fixture-based GitHub CI, explicit grain decisions and recorded anomalies. The original synthetic Gold demo is preserved. It is **not** production-ready, and Olist Gold KPIs, Power BI and Databricks remain future milestones.

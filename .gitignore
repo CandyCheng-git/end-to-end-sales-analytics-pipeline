@@ -19,6 +19,7 @@ __pycache__/
 Thumbs.db
 
 # Generated artifacts
+data/ci/  # synthetic Olist fixture warehouse used by CI
 data/warehouse/
 data/processed/
 *.duckdb

@@ -1,6 +1,6 @@
 # Olist migration — detailed portfolio milestone plan
 
-> **Milestone status updated 2026-11-04.** M0–M2 are completed with recorded local evidence; **M3–M9 remain plans, not completed features.** Keep this document in sync with actual commits and test evidence; never infer completion from a written task or proposed file path.
+> **Milestone status updated 2026-11-11.** M0–M3 are completed with local evidence; M3 was merged in [PR #4](https://github.com/CandyCheng-git/end-to-end-sales-analytics-pipeline/pull/4) and has passing GitHub Actions Python/dbt fixture CI. **M4–M9 are not completed.** This file is the canonical task tracker. Do not confuse full-Olist local evidence with small-fixture GitHub CI.
 
 ## Goals, scope and delivery strategy
 
@@ -18,15 +18,15 @@
 | M0 | Verified local synthetic pipeline preserved | **Completed (baseline)** | 2026-10-25 | — |
 | M1 | Olist acquisition, profiling and data dictionary | **Completed (local verification + PR #1 merged)** | 2026-10-25–26 | M0 |
 | M2 | Validated Python ingestion into Bronze | **Completed — locally verified** | 2026-11-04 | M1 |
-| M3 | dbt Silver source transformations | Planned | Week 3 | M2 |
+| M3 | dbt Silver source transformations | **Completed — local full-data verification + merged PR #4 + CI** | 2026-11-11 | M2 |
 | M4 | Gold dimensional warehouse and reconciled KPIs | Planned | Weeks 4–5 | M3 |
-| M5 | Quality gates, integration tests, CI | Planned | Week 6 | M2–M4 |
+| M5 | Expand Gold quality gates, reconciliation and CI | **Planned — M3 delivered the initial synthetic dbt fixture CI** | Week 6 | M2–M4 |
 | M6 | Power BI dashboard and portfolio v1.0 | Planned | Weeks 7–8 | M4–M5 |
 | M7 | Olist marketing funnel integration | Optional | Week 9 | M4–M6 |
 | M8 | Databricks / Delta Lake implementation | Planned extension | Weeks 10–11+ | M2–M5 |
 | M9 | Incremental loads and scalability benchmarks | Optional | Week 12+ | M5, ideally M8 |
 
-## Proposed flow (future Olist pipeline)
+## Olist flow (Bronze/Silver implemented; Gold and BI planned)
 
 1. Nine Olist CSV sources → Python schema validation, file metadata, ingestion.
 2. DuckDB **Bronze** → separate, auditable raw-source tables.
@@ -108,7 +108,7 @@ Do **not** join order items directly to payments, reviews or raw geolocation and
 
 ## M3 — dbt Silver transformations
 
-**Status:** Planned · **Estimate:** Week 3 · **Depends on:** M2
+**Status:** Completed (2026-11-11; [PR #4 merged](https://github.com/CandyCheng-git/end-to-end-sales-analytics-pipeline/pull/4)) · **Depends on:** M2
 
 **Objective:** Create reliable, explicitly-grained source models.
 
@@ -121,15 +121,28 @@ Do **not** join order items directly to payments, reviews or raw geolocation and
 
 **Deliverables:** Staging/Intermediate SQL models, YAML source definitions and tests, documented Silver model grains and exceptions.
 
-**Acceptance criteria:** Silver models build successfully; grain, key uniqueness and relationships are tested; changes to row counts are explained.
+**Acceptance evidence (owner's full local Olist run):** Nine Bronze/Silver sources reconciled at 1,550,922 rows. All nine Olist staging models and two intermediate models built with 56 data tests (`PASS=67 WARN=0 ERROR=0`); ZIP aggregation produced 19,015 unique prefixes and the audited safe order-item join retained all 112,650 order items. The separate synthetic regression returned `PASS=22 WARN=0 ERROR=0`.
 
-**Suggested commit:** `feat(dbt): implement Olist silver staging models`
+**CI evidence:** GitHub Actions now runs 17 Python unit tests plus [synthetic Olist dbt integration](https://github.com/CandyCheng-git/end-to-end-sales-analytics-pipeline/blob/main/.github/workflows/dbt-silver.yml) (11 Silver models + 56 dbt tests, category/ZIP/cardinality assertions) and the original synthetic regression (5 models + 17 tests). It uses a **separate ignored `data/ci/sales.duckdb`** for Olist fixture data. CI does **not** download or validate the full Olist CSV snapshot.
+
+**Deliverables / closeout:** [M3 execution notes](olist-m3-execution-notes.md), `dbt/models/staging/olist/`, `dbt/models/intermediate/olist/`, `scripts/ci_olist_fixtures.py`, automated GitHub Actions checks, and [merged PR #4](https://github.com/CandyCheng-git/end-to-end-sales-analytics-pipeline/pull/4).
+
+**Accepted limitations:** 610 products missing source category, 13 unmapped category products, ZIP misses on some order-item join rows, and retained delivery/status anomalies. Olist Gold and business revenue definitions are **not** part of M3.
 
 ## M4 — Gold star schema and business metrics
 
 **Status:** Planned · **Estimate:** Weeks 4–5 · **Depends on:** M3
 
 **Objective:** Build analytics-ready models whose totals remain correct under joins.
+
+**Status checklist (not yet completed):**
+- [ ] Write `docs/metric_definitions.md`: item GMV vs payment value, BRL, freight, discounts/refunds, eligible order statuses, purchase vs delivery-date attribution, AOV and retention cohort rules.
+- [ ] Choose `fct_order_items` / `fct_orders` / `fct_order_payments` grains and build separate payment aggregation before combining metrics.
+- [ ] Resolve `customer_id` vs `customer_unique_id` dimension modelling; define seller/product/category and calendar dimensions.
+- [ ] Implement Gold models and dbt uniqueness/not-null/relationships tests at defined grains.
+- [ ] Add revenue/payment reconciliation and anti-fanout assertions; quantify intentional differences and original source exceptions.
+- [ ] Re-run Olist Gold against full local data, preserve SQL evidence, and extend fixture-based CI with Gold assertions before accepting M4.
+- [ ] Obtain code review and merge the M4 PR only after results are recorded.
 
 | Proposed model | Intended grain | Purpose |
 | --- | --- | --- |
@@ -159,13 +172,13 @@ Do **not** join order items directly to payments, reviews or raw geolocation and
 
 **Status:** Planned · **Estimate:** Week 6 · **Depends on:** M2–M4
 
-**Objective:** Turn a locally successful pipeline into a reproducible, test-gated project.
+**Objective:** Extend the M3 fixture CI foundation into broader Gold-level quality and reconciliation checks. The initial Python + dbt Silver fixture CI is **already implemented**; do not duplicate it.
 
 **Tasks:**
 - Expand Python unit/integration tests for file/schema validation, malformed records, rerun behaviour and audit outputs.
 - Add dbt source/model tests: uniqueness, not-null, accepted values, relationships, critical business assertions and sales reconciliation.
-- Build a tiny, licence-safe, committed synthetic **fixture** for GitHub Actions so CI does not require Kaggle credentials or the full Olist dataset.
-- Add `.github/workflows/pipeline-integration.yml` that runs ingestion → dbt build/tests → export and verifies expected fixture totals.
+- **Already implemented in M3:** synthetic fixture generation and ingestion, GitHub Actions Olist Silver dbt build/tests, ZIP/category/grain assertions and synthetic baseline/export regression.
+- Extend `.github/workflows/dbt-silver.yml` or add a Gold-specific workflow to test Gold transformations, KPI reconciliation and known failure cases against a deterministic fixture.
 - Keep full Olist dataset checks in local/manual workflow if data isn't distributed publicly; report coverage and limits clearly.
 
 **Deliverables:** Integration-test workflow, test fixtures, quality summary and recovery/failure instructions.
@@ -237,12 +250,13 @@ Do **not** join order items directly to payments, reviews or raw geolocation and
 
 ---
 
-## Immediate next actions (review M2, then start M3)
+## Immediate next actions (M3 complete → M4)
 
-1. Review the recorded [M2 execution evidence](olist-m2-execution-notes.md) and the feature-branch PR; merge only after reviewing the changes and CI checks.
-2. Keep nine raw CSVs and generated database files local and ignored by Git.
-3. Start M3 on a separate feature branch: dbt source declarations, typed Silver models, key/grain tests, category exceptions and deliberate geolocation aggregation.
-4. Preserve the synthetic Compose regression throughout M3 and document every new local or CI test actually executed.
+1. **First repair the local Windows working tree.** The owner already fast-forwarded the local `main` branch ref to merged M3 commit `4e2a299`, but checkout remained blocked by Windows/OneDrive Git process locks. Clear only confirmed stale Git processes, remove `.git/index.lock` only with no Git process running, restore deleted tracked files, then switch to `main`. GitHub cannot directly operate this Windows environment.
+2. **Start M4 with definitions, not SQL:** settle order status/date eligibility and item GMV vs order payments; publish `docs/metric_definitions.md` as a reviewed metric contract.
+3. Implement explicitly-grained `fct_order_items`, `fct_orders`, payment aggregates and matching dimensions in a new feature branch from current `main`.
+4. Reconcile full historical Olist counts and money totals locally; update CI with small synthetic fixture tests before merging.
+5. Preserve the 11-row synthetic Compose baseline and keep raw Olist files, DuckDB warehouses and credentials out of Git.
 
 ## Maintenance and evidence rules
 
@@ -250,8 +264,8 @@ Do **not** join order items directly to payments, reviews or raw geolocation and
 - Keep README short; track full tasks, dependencies and decisions here. Use standalone architecture, data dictionary, metric definitions and business insights documents as they become real.
 - Suggested commits are examples, **not** a claim that these Git commits exist.
 - Dataset usage: attribute the Olist source, confirm the current Kaggle licence and redistribution terms before publishing derived data or charts, avoid uploading raw files by default, and never commit secrets.
-- No current proof exists here of a Power BI report, Databricks pipeline, **Olist Silver/Gold models**, full Olist integration CI, production monitoring or scalable streaming.
+- Evidence now covers Olist Silver models and fixture-based GitHub Actions CI, **not** Olist Gold facts/KPIs, full-Olist GitHub-hosted execution, a Power BI report, Databricks pipeline, production monitoring or scalable streaming.
 
 ## CV integrity rule
 
-Describe **only completed and verified** capabilities. The synthetic pipeline and verified local Olist Bronze ingestion are evidence of reproducible ingestion, basic provenance and testing, **not** evidence of completed Olist Silver/Gold analytics, Power BI, Databricks or production deployment.
+Describe **only completed and verified** capabilities. M1 profiling, M2 Bronze and M3 Silver now have execution and code-review evidence; GitHub CI verifies a **synthetic fixture**, not the full Olist snapshot. Do **not** claim completed Olist Gold KPIs, Power BI, Databricks, incremental processing or production deployment.
